@@ -31,6 +31,7 @@ setScreen('topic');
 };
 
 // Generate Story with OpenAI
+// Generate Story with OpenAI
 const generateStory = async () => {
   if (!topic.trim()) {
     setError('Please enter a topic');
@@ -41,13 +42,19 @@ const generateStory = async () => {
   setError('');
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
+        model: 'gpt-4', // or 'gpt-3.5-turbo'
         messages: [
+          {
+            role: 'system',
+            content: 'You are a friendly assistant who writes stories for children.'
+          },
           {
             role: 'user',
             content: `Explain "${topic}" for a ${selectedAge} year old and create an engaging, fun story that teaches this concept. The story should:
@@ -60,31 +67,35 @@ const generateStory = async () => {
 
 Write only the story, no additional commentary.`
           }
-        ]
-      })
+        ],
+        max_tokens: 1500,
+        temperature: 0.8,
+      }),
     });
 
-    const data = await response.json();
-
-    if (data.error && data.error.type === 'rate_limit_error') {
-      setError('⚠️ Daily limit reached. Please come back tomorrow or upgrade for unlimited access.');
+    if (!response.ok) {
+      const err = await response.json();
+      setError(err.error?.message || 'Failed to generate story');
       return;
     }
 
-    if (data.content && data.content[0] && data.content[0].text) {
-      setStory(data.content[0].text);
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+
+    if (text) {
+      setStory(text);
       setScreen('result');
     } else {
       setError('Failed to generate story. Please try again.');
     }
+
   } catch (err) {
     console.error('Error:', err);
-    setError('⚠️ Daily limit reached. Please come back tomorrow or upgrade for unlimited access.');
+    setError('Something went wrong. Please try again later.');
   } finally {
     setIsGenerating(false);
   }
 };
-
 
 // Generate Lyrics with OpenAI
 const generateLyrics = async () => {
@@ -104,7 +115,7 @@ const generateLyrics = async () => {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // or 'gpt-3.5-turbo'
+        model: 'gpt-4', // or 'gpt-3.5-turbo'
         messages: [
           {
             role: 'system',
@@ -152,6 +163,7 @@ Write only the lyrics with clear verse and chorus labels.`
     setIsGenerating(false);
   }
 };
+
 
 const data = await response.json();
 
