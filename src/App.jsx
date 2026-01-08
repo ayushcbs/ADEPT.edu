@@ -606,13 +606,111 @@ Confirm <ChevronRight style={{ width: '24px', height: '24px' }} />
 </div>
 );
 
+// Topic Screen
+const TopicScreen = () => (
+  <div style={styles.container}>
+    <div style={styles.centerFlex}>
+      <div style={styles.maxWidth2xl}>
+        <h2 style={styles.sectionTitle}>Enter a topic</h2>
+        <p style={styles.sectionSubtitle}>What would you like to learn about?</p>
+        <input
+          type="text"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Type a topic..."
+          style={styles.input}
+        />
+        {error && <p style={styles.errorText}>{error}</p>}
+        <div style={styles.gridButtons}>
+          <button
+            onClick={() => learningMode === 'story' ? generateStory() : generateLyrics()}
+            style={styles.button}
+          >
+            Generate
+          </button>
+          <button
+            onClick={() => setScreen('learningStyle')}
+            style={styles.secondaryButton}
+          >
+            Back
+          </button>
+        </div>
+        {isGenerating && (
+          <div style={{textAlign: 'center', marginTop: '24px'}}>
+            <Loader style={{width: '32px', height: '32px', color: 'white'}} />
+            <p style={{color: 'white', marginTop: '8px'}}>Generating...</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+// Story Result Screen
+const StoryResultScreen = () => (
+  <div style={styles.container}>
+    <div style={styles.centerFlex}>
+      <div style={styles.maxWidth2xl}>
+        <h2 style={styles.resultTitle}>Your Story</h2>
+        <p style={styles.resultSubtitle}>Learn and enjoy!</p>
+        <div style={styles.storyCard}>
+          <p style={styles.storyText}>{story}</p>
+        </div>
+        <div style={styles.gridButtons}>
+          <button
+            onClick={() => setScreen('topic')}
+            style={styles.secondaryButton}
+          >
+            Back
+          </button>
+          <button
+            onClick={() => setScreen('learningStyle')}
+            style={styles.secondaryButton}
+          >
+            Change Mode
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Lyrics Result Screen
+const LyricsResultScreen = () => (
+  <div style={styles.container}>
+    <div style={styles.centerFlex}>
+      <div style={styles.maxWidth2xl}>
+        <h2 style={styles.resultTitle}>Your Song</h2>
+        <p style={styles.resultSubtitle}>Sing along and learn!</p>
+        <div style={styles.storyCard}>
+          <p style={styles.storyText}>{lyrics}</p>
+        </div>
+        <div style={styles.gridButtons}>
+          <button
+            onClick={() => setScreen('topic')}
+            style={styles.secondaryButton}
+          >
+            Back
+          </button>
+          <button
+            onClick={() => setScreen('learningStyle')}
+            style={styles.secondaryButton}
+          >
+            Change Mode
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 return (
   <>
     {screen === 'landing' && <LandingScreen />}
     {screen === 'learningStyle' && <LearningStyleScreen />}
-    {screen === 'topic' && <div style={styles.centerFlex}><h2 style={styles.sectionTitle}>Topic Screen (placeholder)</h2></div>}
-    {screen === 'result' && <div style={styles.centerFlex}><h2 style={styles.sectionTitle}>Story Result Screen (placeholder)</h2></div>}
-    {screen === 'song-result' && <div style={styles.centerFlex}><h2 style={styles.sectionTitle}>Song Result Screen (placeholder)</h2></div>}
+    {screen === 'topic' && <TopicScreen />}
+    {screen === 'result' && <StoryResultScreen />}
+    {screen === 'song-result' && <LyricsResultScreen />}
   </>
 );
 };
