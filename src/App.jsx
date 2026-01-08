@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, BookOpen, Music, Image, ChevronRight, Loader } from 'lucide-react';
 
-const App = async () => {
+const App = () => {
 const [screen, setScreen] = useState('landing');
 const [selectedAge, setSelectedAge] = useState('');
 const [topic, setTopic] = useState('');
@@ -46,10 +46,10 @@ const generateStory = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer OPENAI_API_KEY`
       },
       body: JSON.stringify({
-        model: 'gpt-4', // or 'gpt-3.5-turbo'
+        model: 'gpt-3.5-turbo', // or 'gpt-3.5-turbo'
         messages: [
           {
             role: 'system',
@@ -112,10 +112,10 @@ const generateLyrics = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer OPENAI_API_KEY`
       },
       body: JSON.stringify({
-        model: 'gpt-4', // or 'gpt-3.5-turbo'
+        model: 'gpt-3.5-turbo', // or 'gpt-3.5-turbo'
         messages: [
           {
             role: 'system',
@@ -163,22 +163,6 @@ Write only the lyrics with clear verse and chorus labels.`
     setIsGenerating(false);
   }
 };
-
-
-const data = await response.json();
-
-// Check for rate limit error
-if (data.error && data.error.type === 'rate_limit_error') {
-setError('⚠️ Daily limit reached. Please come back tomorrow or upgrade for unlimited access.');
-return;
-}
-
-if (data.content && data.content[0] && data.content[0].text) {
-setLyrics(data.content[0].text);
-setScreen('song-result');
-} else {
-setError('Failed to generate lyrics. Please try again.');
-}
 
 const styles = {
 container: {
@@ -759,6 +743,8 @@ return (
     {screen === 'result' && <StoryResultScreen />}
     {screen === 'song-result' && <LyricsResultScreen />}
   </>
+
 );
 };
+
 export default App;
