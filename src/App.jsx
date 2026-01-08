@@ -31,99 +31,86 @@ setScreen('topic');
 };
 
 // Generate Story with OpenAI
-// Generate Story with OpenAI
 const generateStory = async () => {
   if (!topic.trim()) {
-    setError('Please enter a topic');
+    setError("Please enter a topic");
     return;
   }
 
   setIsGenerating(true);
-  setError('');
+  setError("");
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer OPENAI_API_KEY`
+        "Content-Type": "application/json",
+        "x-api-key": import.meta.env.VITE_CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01"
       },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // or 'gpt-3.5-turbo'
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a friendly assistant who writes stories for children.'
-          },
-          {
-            role: 'user',
-            content: `Explain "${topic}" for a ${selectedAge} year old and create an engaging, fun story that teaches this concept. The story should:
-- Be easy to understand for a ${selectedAge} year old
+     body: JSON.stringify({
+  model: "claude-3-haiku-20240307",
+  max_tokens: 800,
+  messages: [
+    {
+  role: "user",
+  content: `Explain "${topic}" for a ${selectedAge} year old.
+
+Requirements:
 - Use simple language and relatable examples
 - Include the key concepts about "${topic}"
-- Be entertaining and about 300-400 words
+- Be entertaining and about 300–400 words
 - Have a clear beginning, middle, and end
 - Include a lesson or takeaway at the end
 
-Write only the story, no additional commentary.`
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.8,
-      }),
+Write only the story, no commentary.`          },
+        ]
+      })
     });
 
-    if (!response.ok) {
-      const err = await response.json();
-      setError(err.error?.message || 'Failed to generate story');
+    const data = await response.json();
+    const text = data.content?.[0]?.text;
+
+    if (!text) {
+      setError("Failed to generate story");
       return;
     }
 
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content;
-
-    if (text) {
-      setStory(text);
-      setScreen('result');
-    } else {
-      setError('Failed to generate story. Please try again.');
-    }
-
-  } catch (err) {
-    console.error('Error:', err);
-    setError('Something went wrong. Please try again later.');
+    setStory(text);
+    setScreen("result");
+  } catch {
+    setError("Something went wrong");
   } finally {
     setIsGenerating(false);
   }
 };
 
+
 // Generate Lyrics with OpenAI
 const generateLyrics = async () => {
   if (!topic.trim()) {
-    setError('Please enter a topic');
+    setError("Please enter a topic");
     return;
   }
 
   setIsGenerating(true);
-  setError('');
+  setError("");
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer OPENAI_API_KEY`
+        "Content-Type": "application/json",
+        "x-api-key": import.meta.env.VITE_CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // or 'gpt-3.5-turbo'
+        model: "claude-3-haiku-20240307",
+        max_tokens: 800,
         messages: [
           {
-            role: 'system',
-            content: 'You are a friendly assistant who writes fun educational songs for kids.'
-          },
-          {
-            role: 'user',
-            content: `Write educational song lyrics about "${topic}" for a ${selectedAge} year old. The lyrics should:
+            role: "user",
+            content:`Write educational song lyrics about "${topic}" for a ${selectedAge} year old. The lyrics should:
 - Be fun, catchy, and easy to remember
 - Use simple language appropriate for a ${selectedAge} year old
 - Teach key concepts about "${topic}"
@@ -134,35 +121,27 @@ const generateLyrics = async () => {
 
 Write only the lyrics with clear verse and chorus labels.`
           }
-        ],
-        max_tokens: 1500,
-        temperature: 0.8,
-      }),
+        ]
+      })
     });
 
-    if (!response.ok) {
-      const err = await response.json();
-      setError(err.error?.message || 'Failed to generate lyrics');
+    const data = await response.json();
+    const text = data.content?.[0]?.text;
+
+    if (!text) {
+      setError("Failed to generate lyrics");
       return;
     }
 
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content;
-
-    if (text) {
-      setLyrics(text);
-      setScreen('song-result');
-    } else {
-      setError('Failed to generate lyrics. Please try again.');
-    }
-
-  } catch (err) {
-    console.error('Error:', err);
-    setError('Something went wrong. Please try again later.');
+    setLyrics(text);
+    setScreen("song-result");
+  } catch {
+    setError("Something went wrong");
   } finally {
     setIsGenerating(false);
   }
 };
+
 
 const styles = {
 container: {
