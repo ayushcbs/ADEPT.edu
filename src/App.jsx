@@ -606,3 +606,5 @@ Write only the lyrics with clear verse and chorus labels.`
     </div>
   )
 }
+
+export default App;
