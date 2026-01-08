@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, BookOpen, Music, Image, ChevronRight, Loader } from 'lucide-react';
 
-const App = () => {
+const App = async () => {
 const [screen, setScreen] = useState('landing');
 const [selectedAge, setSelectedAge] = useState('');
 const [topic, setTopic] = useState('');
@@ -30,28 +30,27 @@ setLearningMode('song');
 setScreen('topic');
 };
 
+// Generate Story with OpenAI
 const generateStory = async () => {
-if (!topic.trim()) {
-setError('Please enter a topic');
-return;
-}
+  if (!topic.trim()) {
+    setError('Please enter a topic');
+    return;
+  }
 
-setIsGenerating(true);
-setError('');
+  setIsGenerating(true);
+  setError('');
 
-try {
-const response = await fetch('https://api.anthropic.com/v1/messages', {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-},
-body: JSON.stringify({
-model: 'claude-sonnet-4-20250514',
-max_tokens: 1500,
-messages: [
-{
-role: 'user',
-content: `Explain "${topic}" for a ${selectedAge} year old and create an engaging, fun story that teaches this concept. The story should:
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [
+          {
+            role: 'user',
+            content: `Explain "${topic}" for a ${selectedAge} year old and create an engaging, fun story that teaches this concept. The story should:
 - Be easy to understand for a ${selectedAge} year old
 - Use simple language and relatable examples
 - Include the key concepts about "${topic}"
@@ -60,55 +59,60 @@ content: `Explain "${topic}" for a ${selectedAge} year old and create an engagin
 - Include a lesson or takeaway at the end
 
 Write only the story, no additional commentary.`
-}
-],
-}),
-});
+          }
+        ]
+      })
+    });
 
-const data = await response.json();
+    const data = await response.json();
 
-// Check for rate limit error
-if (data.error && data.error.type === 'rate_limit_error') {
-setError('⚠️ Daily limit reached. Please come back tomorrow or upgrade for unlimited access.');
-return;
-}
+    if (data.error && data.error.type === 'rate_limit_error') {
+      setError('⚠️ Daily limit reached. Please come back tomorrow or upgrade for unlimited access.');
+      return;
+    }
 
-if (data.content && data.content[0] && data.content[0].text) {
-setStory(data.content[0].text);
-setScreen('result');
-} else {
-setError('Failed to generate story. Please try again.');
-}
-} catch (err) {
-console.error('Error:', err);
-setError('⚠️ Daily limit reached. Please come back tomorrow or upgrade for unlimited access.');
-} finally {
-setIsGenerating(false);
-}
+    if (data.content && data.content[0] && data.content[0].text) {
+      setStory(data.content[0].text);
+      setScreen('result');
+    } else {
+      setError('Failed to generate story. Please try again.');
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    setError('⚠️ Daily limit reached. Please come back tomorrow or upgrade for unlimited access.');
+  } finally {
+    setIsGenerating(false);
+  }
 };
 
+
+// Generate Lyrics with OpenAI
 const generateLyrics = async () => {
-if (!topic.trim()) {
-setError('Please enter a topic');
-return;
-}
+  if (!topic.trim()) {
+    setError('Please enter a topic');
+    return;
+  }
 
-setIsGenerating(true);
-setError('');
+  setIsGenerating(true);
+  setError('');
 
-try {
-const response = await fetch('https://api.anthropic.com/v1/messages', {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-},
-body: JSON.stringify({
-model: 'claude-sonnet-4-20250514',
-max_tokens: 1500,
-messages: [
-{
-role: 'user',
-content: `Write educational song lyrics about "${topic}" for a ${selectedAge} year old. The lyrics should:
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo', // or 'gpt-3.5-turbo'
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a friendly assistant who writes fun educational songs for kids.'
+          },
+          {
+            role: 'user',
+            content: `Write educational song lyrics about "${topic}" for a ${selectedAge} year old. The lyrics should:
 - Be fun, catchy, and easy to remember
 - Use simple language appropriate for a ${selectedAge} year old
 - Teach key concepts about "${topic}"
@@ -118,10 +122,36 @@ content: `Write educational song lyrics about "${topic}" for a ${selectedAge} ye
 - Be entertaining while educational
 
 Write only the lyrics with clear verse and chorus labels.`
-}
-],
-}),
-});
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      setError(err.error?.message || 'Failed to generate lyrics');
+      return;
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+
+    if (text) {
+      setLyrics(text);
+      setScreen('song-result');
+    } else {
+      setError('Failed to generate lyrics. Please try again.');
+    }
+
+  } catch (err) {
+    console.error('Error:', err);
+    setError('Something went wrong. Please try again later.');
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
 const data = await response.json();
 
@@ -137,13 +167,6 @@ setScreen('song-result');
 } else {
 setError('Failed to generate lyrics. Please try again.');
 }
-} catch (err) {
-console.error('Error:', err);
-setError('⚠️ Daily limit reached. Please come back tomorrow or upgrade for unlimited access.');
-} finally {
-setIsGenerating(false);
-}
-};
 
 const styles = {
 container: {
@@ -607,44 +630,56 @@ Confirm <ChevronRight style={{ width: '24px', height: '24px' }} />
 );
 
 // Topic Screen
-const TopicScreen = () => (
-  <div style={styles.container}>
-    <div style={styles.centerFlex}>
-      <div style={styles.maxWidth2xl}>
-        <h2 style={styles.sectionTitle}>Enter a topic</h2>
-        <p style={styles.sectionSubtitle}>What would you like to learn about?</p>
-        <input
-          type="text"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          placeholder="Type a topic..."
-          style={styles.input}
-        />
-        {error && <p style={styles.errorText}>{error}</p>}
-        <div style={styles.gridButtons}>
-          <button
-            onClick={() => learningMode === 'story' ? generateStory() : generateLyrics()}
-            style={styles.button}
-          >
-            Generate
-          </button>
-          <button
-            onClick={() => setScreen('learningStyle')}
-            style={styles.secondaryButton}
-          >
-            Back
-          </button>
-        </div>
-        {isGenerating && (
-          <div style={{textAlign: 'center', marginTop: '24px'}}>
-            <Loader style={{width: '32px', height: '32px', color: 'white'}} />
-            <p style={{color: 'white', marginTop: '8px'}}>Generating...</p>
+const TopicScreen = ({ hidden }) => (
+  <div style={{ display: hidden ? 'none' : 'block' }}>
+    <div style={styles.container}>
+      <div style={styles.centerFlex}>
+        <div style={styles.maxWidth2xl}>
+          <h2 style={styles.sectionTitle}>Enter a topic</h2>
+          <p style={styles.sectionSubtitle}>What would you like to learn about?</p>
+
+          <input
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="Type a topic..."
+            style={styles.input}
+          />
+
+          {error && <p style={styles.errorText}>{error}</p>}
+
+          <div style={styles.gridButtons}>
+            <button
+              onClick={() =>
+                learningMode === 'story'
+                  ? generateStory()
+                  : generateLyrics()
+              }
+              style={styles.button}
+            >
+              Generate
+            </button>
+
+            <button
+              onClick={() => setScreen('learningStyle')}
+              style={styles.secondaryButton}
+            >
+              Back
+            </button>
           </div>
-        )}
+
+          {isGenerating && (
+            <div style={{ textAlign: 'center', marginTop: '24px' }}>
+              <Loader style={{ width: '32px', height: '32px', color: 'white' }} />
+              <p style={{ color: 'white', marginTop: '8px' }}>Generating...</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </div>
 );
+
 
 // Story Result Screen
 const StoryResultScreen = () => (
@@ -708,7 +743,7 @@ return (
   <>
     {screen === 'landing' && <LandingScreen />}
     {screen === 'learningStyle' && <LearningStyleScreen />}
-    {screen === 'topic' && <TopicScreen />}
+    <TopicScreen hidden={screen !== 'topic'} />
     {screen === 'result' && <StoryResultScreen />}
     {screen === 'song-result' && <LyricsResultScreen />}
   </>
